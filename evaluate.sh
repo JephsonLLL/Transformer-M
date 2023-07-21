@@ -4,12 +4,12 @@ ulimit -c unlimited
 [ -z "${hidden_size}" ] && hidden_size=768
 [ -z "${ffn_size}" ] && ffn_size=768
 [ -z "${num_head}" ] && num_head=32
-[ -z "${batch_size}" ] && batch_size=256
+[ -z "${batch_size}" ] && batch_size=64
 [ -z "${update_freq}" ] && update_freq=1
 [ -z "${seed}" ] && seed=1
 [ -z "${clip_norm}" ] && clip_norm=5
-[ -z "${data_path}" ] && data_path='./datasets/'
-[ -z "${save_path}" ] && save_path='./logs/path_to_ckpts/'
+[ -z "${data_path}" ] && data_path='./datasets/pcq-pos'
+[ -z "${save_path}" ] && save_path='./logs/L18'
 [ -z "${dropout}" ] && dropout=0.0
 [ -z "${act_dropout}" ] && act_dropout=0.1
 [ -z "${attn_dropout}" ] && attn_dropout=0.1

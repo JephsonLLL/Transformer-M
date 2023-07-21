@@ -9,6 +9,7 @@ from fairseq.criterions import FairseqCriterion, register_criterion
 from fairseq.dataclass import FairseqDataclass
 import os
 
+import pdb
 
 @dataclass
 class GraphPredictionConfig(FairseqDataclass):
@@ -143,6 +144,8 @@ class GraphPredictionLossQM9(FairseqCriterion):
 
         targets = model.get_targets(sample, [logits])
 
+        #pdb.set_trace()
+        
         mean = sample['net_input']['batched_data']['mean']
         std = sample['net_input']['batched_data']['std']
 
@@ -151,11 +154,17 @@ class GraphPredictionLossQM9(FairseqCriterion):
             new_logits = logits
         elif self.std_type == 'std_logits':
             new_labels = targets
+
+            #pdb.set_trace()
+
             new_logits = logits * std + mean
         else:
             new_labels = targets
             new_logits = logits
-
+        '''
+        new_labels = targets
+        new_logits = logits
+        '''
         if self.std_type == 'no_std':
             loss_l1 = nn.L1Loss(reduction="sum")(logits, targets)
         else:
@@ -166,7 +175,10 @@ class GraphPredictionLossQM9(FairseqCriterion):
             loss = loss_func(reduction="sum")(new_logits, new_labels)
         else:
             loss = loss_l1
-
+        '''
+        loss_func = nn.L1Loss
+        loss = loss_func(reduction="sum")(new_logits, new_labels)
+        '''
         logging_output = {
             "loss": loss.data,
             "loss_l1": loss_l1.data,

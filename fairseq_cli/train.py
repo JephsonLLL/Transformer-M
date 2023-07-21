@@ -43,7 +43,7 @@ from fairseq.model_parallel.megatron_trainer import MegatronTrainer
 from fairseq.trainer import Trainer
 from omegaconf import DictConfig, OmegaConf
 
-
+import pdb
 
 
 def main(cfg: FairseqConfig) -> None:
@@ -95,6 +95,12 @@ def main(cfg: FairseqConfig) -> None:
             model = fsdp_wrap(task.build_model(cfg.model))
     else:
         model = task.build_model(cfg.model)
+
+    #pdb.set_trace()
+    '''
+    model_state = torch.load('./logs/L18/L18.pt')["model"]
+    model.load_state_dict(model_state, strict=False, model_cfg=cfg.model)
+    '''
     criterion = task.build_criterion(cfg.criterion)
     logger.info(model)
     logger.info("task: {}".format(task.__class__.__name__))

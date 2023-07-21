@@ -82,14 +82,19 @@ class MyMoleculeNet(MoleculeNet):
 
 class PYGDatasetLookupTable:
     @staticmethod
-    def GetPYGDataset(dataset_spec: str, seed: int) -> Optional[Dataset]:
-        split_result = dataset_spec.split(":")
+    def GetPYGDataset(dataset_name: str, dataset_path: str, seed: int, task_idx: int) -> Optional[Dataset]:
+        #split_result = dataset_spec.split(":")
+        '''
         if len(split_result) == 2:
             name, params = split_result[0], split_result[1]
             params = params.split(",")
         elif len(split_result) == 1:
             name = dataset_spec
             params = []
+        '''
+
+        name = dataset_name
+
         inner_dataset = None
         num_class = 1
 
@@ -97,8 +102,10 @@ class PYGDatasetLookupTable:
         valid_set = None
         test_set = None
 
-        root = "dataset"
+        #root = "dataset"
+        root = dataset_path
         qm9_data = False
+
         if name == "qm7b":
             inner_dataset = MyQM7b(root=root)
         elif name == "qm9":
@@ -146,5 +153,5 @@ class PYGDatasetLookupTable:
             return (
                 None
                 if inner_dataset is None
-                else data_func(inner_dataset, seed)
+                else data_func(inner_dataset, seed, task_idx = task_idx)
             )

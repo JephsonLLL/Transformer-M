@@ -2,17 +2,17 @@ ulimit -c unlimited
 
 [ -z "${lr}" ] && lr=2e-4
 [ -z "${end_lr}" ] && end_lr=1e-9
-[ -z "${warmup_steps}" ] && warmup_steps=150000
-[ -z "${total_steps}" ] && total_steps=1500000
-[ -z "${layers}" ] && layers=12
-[ -z "${hidden_size}" ] && hidden_size=768
-[ -z "${ffn_size}" ] && ffn_size=768
-[ -z "${num_head}" ] && num_head=32
-[ -z "${batch_size}" ] && batch_size=256
+[ -z "${warmup_steps}" ] && warmup_steps=1500
+[ -z "${total_steps}" ] && total_steps=15000
+[ -z "${layers}" ] && layers=3
+[ -z "${hidden_size}" ] && hidden_size=192
+[ -z "${ffn_size}" ] && ffn_size=192
+[ -z "${num_head}" ] && num_head=8
+[ -z "${batch_size}" ] && batch_size=32
 [ -z "${update_freq}" ] && update_freq=1
 [ -z "${seed}" ] && seed=1
 [ -z "${clip_norm}" ] && clip_norm=5
-[ -z "${data_path}" ] && data_path='./datasets/'
+[ -z "${data_path}" ] && data_path='./datasets/pcq-pos'
 [ -z "${save_path}" ] && save_path='./logs/'
 [ -z "${dropout}" ] && dropout=0.0
 [ -z "${act_dropout}" ] && act_dropout=0.1
@@ -26,7 +26,7 @@ ulimit -c unlimited
 [ -z "${dataset_name}" ] && dataset_name="PCQM4M-LSC-V2-3D"
 [ -z "${add_3d}" ] && add_3d="true"
 [ -z "${no_2d}" ] && no_2d="false"
-[ -z "${num_3d_bias_kernel}" ] && num_3d_bias_kernel=128
+[ -z "${num_3d_bias_kernel}" ] && num_3d_bias_kernel=32
 
 [ -z "${MASTER_PORT}" ] && MASTER_PORT=10086
 [ -z "${OMPI_COMM_WORLD_SIZE}" ] && OMPI_COMM_WORLD_SIZE=1

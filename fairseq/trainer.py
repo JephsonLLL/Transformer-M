@@ -6,6 +6,7 @@
 """
 Train a network across multiple GPUs.
 """
+import pdb
 
 import contextlib
 import logging
@@ -497,10 +498,12 @@ class Trainer(object):
                 if self.data_parallel_rank > 0:
                     last_optim_state = state.get("last_optimizer_state", None)
 
+            # pdb.set_trace()       
+
             # load model parameters
             try:
                 self.model.load_state_dict(
-                    state["model"], strict=True, model_cfg=self.cfg.model
+                    state["model"], strict=False, model_cfg=self.cfg.model
                 )
                 # save memory for later steps
                 del state["model"]
@@ -515,9 +518,9 @@ class Trainer(object):
                     "Cannot load model parameters from checkpoint {}; "
                     "please ensure that the architectures match.".format(filename)
                 )
-            extra_state = state["extra_state"]
-            self._optim_history = state["optimizer_history"]
-
+            #extra_state = state["extra_state"]
+            #self._optim_history = state["optimizer_history"]
+        '''
         if last_optim_state is not None and not reset_optimizer:
             # rebuild optimizer after loading model, since params may have changed
             self._build_optimizer()
@@ -547,7 +550,7 @@ class Trainer(object):
             self.optimizer.load_state_dict(last_optim_state, optimizer_overrides)
 
             self.set_num_updates(last_optim["num_updates"])
-
+        '''
         if extra_state is not None:
             itr_state = extra_state["train_iterator"]
             epoch = itr_state["epoch"]
@@ -604,8 +607,8 @@ class Trainer(object):
                 )
             )
 
-        else:
-            logger.info("No existing checkpoint found {}".format(filename))
+        #else:
+        #   logger.info("No existing checkpoint found {}".format(filename))
 
         return extra_state
 

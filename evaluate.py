@@ -12,6 +12,8 @@ from sklearn.metrics import roc_auc_score
 import sys
 from os import path
 
+import pdb
+
 sys.path.append( path.dirname( path.dirname( path.abspath(__file__) ) ) )
 
 import logging
@@ -27,9 +29,11 @@ def eval(args, use_pretrained, checkpoint_path=None, logger=None):
 
     # load checkpoint
 
+    #pdb.set_trace()
+
     model_state = torch.load(checkpoint_path)["model"]
     model.load_state_dict(
-        model_state, strict=True, model_cfg=cfg.model
+        model_state, strict=False, model_cfg=cfg.model
     )
     del model_state
 

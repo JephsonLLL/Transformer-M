@@ -14,6 +14,8 @@ from .multihead_attention import MultiheadAttention
 from .transformer_m_layers import AtomFeature, MoleculeAttnBias, Molecule3DBias, AtomTaskHead
 from .transformer_m_encoder_layer import TransformerMEncoderLayer
 
+import pdb
+
 def init_params(module):
 
     def normal_(data):
@@ -132,6 +134,7 @@ class TransformerMEncoder(nn.Module):
             no_share_rpe=False,
         ) if add_3d else None
 
+        #1
         self.atom_proc = AtomTaskHead(embedding_dim, num_attention_heads)
 
         self.embed_scale = embed_scale
@@ -226,12 +229,15 @@ class TransformerMEncoder(nn.Module):
         is_tpu = False
         # compute padding mask. This is needed for multi-head attention
 
+        #pdb.set_trace()
+
         data_x = batched_data["x"]
         n_mol, n_atom = data_x.size()[:2]
         padding_mask = (data_x[:,:,0]).eq(0) # B x T x 1
         padding_mask_cls = torch.zeros(n_mol, 1, device=padding_mask.device, dtype=padding_mask.dtype)
         padding_mask = torch.cat((padding_mask_cls, padding_mask), dim=1)
         # B x (T+1) x 1
+        #2
         mask_dict = {0: [1, 1], 1: [1, 0], 2: [0, 1]}
         mask_2d = mask_3d = None
         if self.training:
@@ -286,6 +292,8 @@ class TransformerMEncoder(nn.Module):
             if not last_state_only:
                 inner_states.append(x)
 
+        #pdb.set_trace()
+        #3
         atom_output = None
         if delta_pos is not None:
             atom_output = self.atom_proc(x[1:, :, :], attn_bias[:, :, 1:, 1:], delta_pos)
@@ -548,10 +556,16 @@ class TransformerMEncoderQM9(nn.Module):
             if not last_state_only:
                 inner_states.append(x)
 
+
+
+
+
+
+
         if last_state_only:
             inner_states = [x]
 
         if self.traceable:
-            return torch.stack(inner_states), atom_output
+            return torch.stack(inner_states), None#, atom_output
         else:
-            return inner_states, atom_output
+            return inner_states, None#, atom_output

@@ -374,7 +374,8 @@ class GraphPredictionTaskQM9(FairseqTask):
 
     def __init__(self, cfg):
         super().__init__(cfg)
-        self.dm = PYGPreprocessedData(dataset_name=self.cfg.dataset_name, dataset_path=self.cfg.data_path, seed=self.cfg.seed, task_idx=self.cfg.task_idx)
+        #self.dm = PYGPreprocessedData(dataset_name=self.cfg.dataset_name, dataset_path=self.cfg.data_path, seed=self.cfg.seed, task_idx=self.cfg.task_idx)
+        self.dm = PCQPreprocessedData(dataset_name=self.cfg.dataset_name, dataset_path=self.cfg.data_path)
 
     @classmethod
     def setup_task(cls, cfg, **kwargs):
@@ -394,6 +395,7 @@ class GraphPredictionTaskQM9(FairseqTask):
             batched_data = self.dm.dataset_test
 
         batched_data = BatchedDataDataset(batched_data,
+            #dataset_version="3D",
             dataset_version="3D_QM9",
             max_node=self.dm.max_node,
             multi_hop_max_dist=self.dm.multi_hop_max_dist,

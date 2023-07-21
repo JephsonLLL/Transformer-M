@@ -14,7 +14,7 @@ ulimit -c unlimited
 [ -z "${update_freq}" ] && update_freq=1
 [ -z "${seed}" ] && seed=1
 [ -z "${clip_norm}" ] && clip_norm=5
-[ -z "${data_path}" ] && data_path='./'
+[ -z "${data_path}" ] && data_path='./datasets/qm9/'
 [ -z "${save_path}" ] && save_path='./logs'
 [ -z "${dropout}" ] && dropout=0.0
 [ -z "${act_dropout}" ] && act_dropout=0.1
@@ -23,13 +23,13 @@ ulimit -c unlimited
 [ -z "${sandwich_ln}" ] && sandwich_ln="false"
 [ -z "${droppath_prob}" ] && droppath_prob=0.0
 
-[ -z "${loss_type}" ] && loss_type="L2"
+[ -z "${loss_type}" ] && loss_type="L1"
 [ -z "${std_type}" ] && std_type="std_logits"
 [ -z "${readout_type}" ] && readout_type="cls"
 
 [ -z "${save_interval}" ] && save_interval=10
+#[ -z "${dataset_name}" ] && dataset_name="PCQM4M-LSC-V2-3D"
 [ -z "${dataset_name}" ] && dataset_name="qm9H"
-
 [ -z "${task_idx}" ] && task_idx=2
 
 [ -z "${add_3d}" ] && add_3d="true"
@@ -42,7 +42,7 @@ ulimit -c unlimited
 [ -z "${OMPI_COMM_WORLD_SIZE}" ] && OMPI_COMM_WORLD_SIZE=1
 
 [ -z "${save_prefix}" ] && save_prefix='exp'
-[ -z "${ckpt_path}" ] && ckpt_path='../ckpts/ckpt.pt' # set this dir
+[ -z "${ckpt_path}" ] && ckpt_path='./logs/checkpoint_last.pt' # set this dir
 
 echo -e "\n\n"
 echo "==================================MP==========================================="

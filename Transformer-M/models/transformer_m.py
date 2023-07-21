@@ -186,10 +186,16 @@ class TransformerMModel(FairseqEncoderModel):
 
         logger.info(args)
 
+
+        '''
         if args.load_qm9:
             encoder = TransformerMQM9(args)
         else:
             encoder = TransformerM(args)
+        '''
+
+        #encoder = TransformerMQM9(args)
+        encoder = TransformerM(args)
 
         return cls(args, encoder)
 

@@ -11,6 +11,8 @@ from .collator import collator, collator_3d, collator_3d_qm9
 from .ogb_datasets import OGBDatasetLookupTable
 from .pyg_datasets import PYGDatasetLookupTable
 
+import pdb
+
 class PCQPreprocessedData():
     def __init__(self, dataset_name, dataset_path = "../dataset"):
         super().__init__()
@@ -28,6 +30,8 @@ class PCQPreprocessedData():
         self.setup()
 
     def setup(self, stage: str = None):
+        '''
+        
         split_idx = self.dataset.get_idx_split()
         if self.dataset_name in ["PCQM4M-LSC-V2", "PCQM4M-LSC-V2-3D"]:
             self.train_idx = split_idx["train"]
@@ -37,6 +41,15 @@ class PCQPreprocessedData():
             self.train_idx = split_idx["train"][:5000]
             self.valid_idx = split_idx["valid"]
             self.test_idx = split_idx["test-dev"]
+        '''
+        #pdb.set_trace()
+
+
+        self.train_idx = torch.from_numpy(np.arange(276))
+        self.valid_idx = torch.from_numpy(np.arange(276,344))
+        self.test_idx = torch.from_numpy(np.arange(276,344))
+        
+
 
         self.dataset_train = self.dataset.index_select(self.train_idx)
         self.dataset_val = self.dataset.index_select(self.valid_idx)
