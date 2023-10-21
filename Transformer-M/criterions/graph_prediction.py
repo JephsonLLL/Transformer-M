@@ -133,17 +133,18 @@ class GraphPredictionLossQM9(FairseqCriterion):
             natoms = sample["net_input"]["batched_data"]['x'].shape[1]
 
         logits = model(**sample["net_input"])[0]
+        '''
         logits_padding = sample['net_input']['batched_data']['x'][:, :, 0].eq(0).unsqueeze(-1)
-
+        
         if self.readout_type == 'cls':
             logits = logits[:, 0, :]
         elif self.readout_type == 'mean':
             logits = logits[:, 1:, :].masked_fill_(logits_padding, 0.0).mean(dim=1)
         else:
             logits = logits[:, 1:, :].masked_fill_(logits_padding, 0.0).sum(dim=1)
-
+        '''
         targets = model.get_targets(sample, [logits])
-
+        #print('qm9')
         #pdb.set_trace()
         
         mean = sample['net_input']['batched_data']['mean']
@@ -161,24 +162,24 @@ class GraphPredictionLossQM9(FairseqCriterion):
         else:
             new_labels = targets
             new_logits = logits
-        '''
-        new_labels = targets
-        new_logits = logits
-        '''
+        
         if self.std_type == 'no_std':
             loss_l1 = nn.L1Loss(reduction="sum")(logits, targets)
         else:
-            loss_l1 = nn.L1Loss(reduction="sum")(logits * std + mean, targets)
-
+            #loss_l1 = nn.L1Loss(reduction="sum")(logits * std + mean, targets)
+            loss_l1 = nn.L1Loss(reduction="sum")(logits, targets)
+        '''
         if sample['net_input']['batched_data']['type'] == 'train':
             loss_func = nn.L1Loss if self.loss_type == 'L1' else nn.MSELoss
             loss = loss_func(reduction="sum")(new_logits, new_labels)
         else:
             loss = loss_l1
-        '''
+        
         loss_func = nn.L1Loss
         loss = loss_func(reduction="sum")(new_logits, new_labels)
         '''
+        loss = loss_l1
+        
         logging_output = {
             "loss": loss.data,
             "loss_l1": loss_l1.data,

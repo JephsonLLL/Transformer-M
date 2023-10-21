@@ -2,9 +2,9 @@ ulimit -c unlimited
 
 # example for HOMO (task_idx=2) & LUMO (task_idx=3)
 
-[ -z "${lr}" ] && lr=7e-6
-[ -z "${end_lr}" ] && end_lr=1e-8
-[ -z "${warmup_steps}" ] && warmup_steps=50000
+[ -z "${lr}" ] && lr=1e-5
+[ -z "${end_lr}" ] && end_lr=3e-10
+[ -z "${warmup_steps}" ] && warmup_steps=30000
 [ -z "${total_steps}" ] && total_steps=100000
 [ -z "${layers}" ] && layers=12
 [ -z "${hidden_size}" ] && hidden_size=768
@@ -27,7 +27,7 @@ ulimit -c unlimited
 [ -z "${std_type}" ] && std_type="std_logits"
 [ -z "${readout_type}" ] && readout_type="cls"
 
-[ -z "${save_interval}" ] && save_interval=10
+[ -z "${save_interval}" ] && save_interval=50
 [ -z "${dataset_name}" ] && dataset_name="PCQM4M-LSC-V2-3D"
 [ -z "${task_idx}" ] && task_idx=2
 

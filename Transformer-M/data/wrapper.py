@@ -301,6 +301,7 @@ class PygPCQM4Mv2PosDataset(InMemoryDataset):
         #data_df = pd.read_csv(osp.join(self.raw_dir, 'data.csv.gz'))
         Donor_graph_pos_list = Chem.SDMolSupplier(osp.join(self.original_root, 'opv.sdf'))
         #graph_pos_list = Chem.SDMolSupplier(osp.join(self.original_root, 'pcqm4m-v2-train.sdf'))
+        acceptor_graph_pos_list = Chem.SDMolSupplier(osp.join(self.original_root, 'acceptor.sdf'))
 
         PC61BM = "COC(=O)CCCC1(C23C14C5=C6C7=C8C5=C9C1=C5C%10=C%11C%12=C%13C%10=C%10C1=C8C1=C%10C8=C%10C%14=C%15C%16=C%17C(=C%12C%12=C%17C%17=C%18C%16=C%16C%15=C%15C%10=C1C7=C%15C1=C%16C(=C%18C7=C2C2=C%10C(=C5C9=C42)C%11=C%12C%10=C%177)C3=C16)C%14=C%138)C1=CC=CC=C1"
         PC71BM = "COC(=O)CCCC1(C23C14C5=C6C7=C8C9=C1C%10=C%11C9=C9C%12=C%13C%14=C%15C%16=C%17C%18=C%19C%20=C%21C%22=C%23C%24=C%25C%26=C%27C%28=C(C%14=C%14C%12=C%11C%11=C%14C%28=C%26C%12=C%11C%10=C%10C%12=C%25C%23=C%11C%10=C1C7=C%11C%22=C6C4=C%21C%19=C2C%17=C1C%15=C%13C2=C9C8=C5C2=C31)C%16=C%18C%27=C%24%20)C1=CC=CC=C1"
@@ -309,15 +310,21 @@ class PygPCQM4Mv2PosDataset(InMemoryDataset):
         PDI = "C1=CC2=C3C(=CC=C4C3=C1C5=C6C4=CC=C7C6=C(C=C5)C(=O)OC7=O)C(=O)OC2=O"
         ICBA = "C1C2C3=CC=CC=C3C1C45C26C7=C8C9=C1C2=C3C8=C8C6=C6C4=C4C%10=C%11C%12=C%13C%14=C%15C%16=C%17C(=C1C1=C2C2=C%18C%19=C%20C2=C3C8=C2C%20=C(C%10=C26)C2=C%11C3=C%13C%15=C6C%17=C1C%181C6(C3=C2%19)C2CC1C1=CC=CC=C21)C1=C%16C2=C%14C(=C%124)C5=C2C7=C19"
 
-        acceptor_dict = {'PC61BM': PC61BM, 'PC71BM':PC71BM, 'TiO2':TiO2, 'C60':C60, 'PDI':PDI, 'ICBA':ICBA}
+        #acceptor_dict = {'PC61BM': PC61BM, 'PC71BM':PC71BM, 'TiO2':TiO2, 'C60':C60, 'PDI':PDI, 'ICBA':ICBA}
+        acceptor_dict = {'PC61BM': 0, 'PC71BM':1, 'TiO2':2, 'C60':3, 'PDI':4, 'ICBA':5}
         acceptor_list = data_df['Acceptors']
+        '''
         graph_pos_list = []
-
         for i in range(344):
-            acc_mol = Chem.MolFromSmiles(acceptor_dict[acceptor_list[i]])
-            combined_mol = Chem.CombineMols(Donor_graph_pos_list[i], acc_mol)
-            graph_pos_list.append(combined_mol)
+            ##acc_mol = Chem.MolFromSmiles(acceptor_dict[acceptor_list[i]])
+            #pdb.set_trace()
             
+            #print(acceptor_list[i])
+            
+            combined_mol = Chem.CombineMols(Donor_graph_pos_list[i], acceptor_graph_pos_list[acceptor_dict[acceptor_list[i]]])
+            ##combined_mol = Chem.CombineMols(Donor_graph_pos_list[i], acc_mol)
+            graph_pos_list.append(combined_mol)
+        '''
 
         smiles_list = data_df['Donors']
         #PCE
@@ -353,9 +360,9 @@ class PygPCQM4Mv2PosDataset(InMemoryDataset):
         print('Extracting 3D positions from SDF files for Training Data...')
         train_data_with_position_list = []
         with Pool(processes=120) as pool:
-            iter = pool.imap(mol2graph, graph_pos_list)
+            iter = pool.imap(mol2graph, Donor_graph_pos_list)
 
-            for i, graph in tqdm(enumerate(iter), total=len(graph_pos_list)):
+            for i, graph in tqdm(enumerate(iter), total=len(Donor_graph_pos_list)):
                 try:
                     data = Data()
                     homolumogap = homolumogap_list[i]
@@ -369,11 +376,21 @@ class PygPCQM4Mv2PosDataset(InMemoryDataset):
                     data.x = torch.from_numpy(graph['node_feat']).to(torch.int64)
                     data.y = torch.Tensor([homolumogap])
                     data.pos = torch.from_numpy(graph['position']).to(torch.float32)
+
+                    
+                    acc_graph = mol2graph(acceptor_graph_pos_list[acceptor_dict[acceptor_list[i]]])
+
+                    data.acc_x = torch.from_numpy(acc_graph['node_feat']).to(torch.int64)
+                    data.acc_pos = torch.from_numpy(acc_graph['position']).to(torch.float32)
+
                     #pdb.set_trace()
 
                     train_data_with_position_list.append(data)
                 except:
                     continue
+
+        #pdb.set_trace()
+        
         data_list = train_data_with_position_list + data_list[len(train_data_with_position_list):]
 
         if self.pre_transform is not None:
@@ -425,6 +442,14 @@ def preprocess_item(item):
     attn_bias = torch.zeros(
         [N + 1, N + 1], dtype=torch.float)  # with graph token
 
+    acc_x = item.acc_x
+    acc_N = acc_x.size(0)
+    acc_x = convert_to_single_emb(acc_x)
+    
+    acc_attn_bias = torch.zeros(
+        [acc_N + 1, acc_N + 1], dtype=torch.float)
+
+
     # combine
     item.x = x
     item.attn_bias = attn_bias
@@ -433,6 +458,9 @@ def preprocess_item(item):
     item.in_degree = adj.long().sum(dim=1).view(-1)
     item.out_degree = item.in_degree # for undirected graph
     item.edge_input = torch.from_numpy(edge_input).long()
+
+    item.acc_x = acc_x
+    item.acc_attn_bias = acc_attn_bias
 
     return item
 

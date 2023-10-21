@@ -171,10 +171,10 @@ def collator_3d_qm9(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=
         item for item in items if item is not None and item.x.size(0) <= max_node]
     items = [(item.idx, item.attn_bias, item.attn_edge_type, item.spatial_pos, item.in_degree,
               item.out_degree, item.x, item.edge_input[:, :, :multi_hop_max_dist, :], item.y, item.pos,
-              item.train_mean, item.train_std, item.type
+              item.train_mean, item.train_std, item.type, item.acc_x, item.acc_pos, item.acc_attn_bias
 
               ) for item in items]
-    idxs, attn_biases, attn_edge_types, spatial_poses, in_degrees, out_degrees, xs, edge_inputs, ys, poses, means, stds, types = zip(*items)
+    idxs, attn_biases, attn_edge_types, spatial_poses, in_degrees, out_degrees, xs, edge_inputs, ys, poses, means, stds, types, acc_xs, acc_poses, acc_attn_biases = zip(*items)
 
     for idx, _ in enumerate(attn_biases):
         attn_biases[idx][1:, 1:][spatial_poses[idx] >= spatial_pos_max] = float('-inf')
@@ -195,6 +195,13 @@ def collator_3d_qm9(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=
 
     pos = torch.cat([pad_pos_unsqueeze(i, max_node_num) for i in poses])
 
+    acc_max_node_num = max(i.size(0) for i in acc_xs)
+
+    acc_x = torch.cat([pad_2d_unsqueeze(i, acc_max_node_num) for i in acc_xs])
+    acc_pos = torch.cat([pad_pos_unsqueeze(i, acc_max_node_num) for i in acc_poses])
+    acc_attn_bias = torch.cat([pad_attn_bias_unsqueeze(
+        i, acc_max_node_num + 1) for i in acc_attn_biases])
+    
     node_type_edges = []
     for idx in range(len(items)):
 
@@ -209,6 +216,25 @@ def collator_3d_qm9(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=
 
         node_type_edges.append(node_atom_edge.long())
     node_type_edge = torch.cat(node_type_edges)
+
+    acc_node_type_edges = []
+    for idx in range(len(items)):
+
+        node_atom_type = items[idx][13][:, 0]
+        n_nodes = items[idx][13].shape[0]
+
+        #import pdb
+        #pdb.set_trace()
+        
+        node_atom_i = node_atom_type.unsqueeze(-1).repeat(1, n_nodes)
+        node_atom_i = pad_spatial_pos_unsqueeze(node_atom_i, acc_max_node_num).unsqueeze(-1)
+        node_atom_j = node_atom_type.unsqueeze(0).repeat(n_nodes, 1)
+        node_atom_j = pad_spatial_pos_unsqueeze(node_atom_j, acc_max_node_num).unsqueeze(-1)
+        node_atom_edge = torch.cat([node_atom_i, node_atom_j], dim=-1)
+        node_atom_edge = convert_to_single_emb(node_atom_edge)
+
+        acc_node_type_edges.append(node_atom_edge.long())
+    acc_node_type_edge = torch.cat(acc_node_type_edges)
 
     return dict(
         idx=torch.LongTensor(idxs),
@@ -227,4 +253,9 @@ def collator_3d_qm9(items, max_node=512, multi_hop_max_dist=20, spatial_pos_max=
         mean=means[0],
         std=stds[0],
         type=types[0],
+
+        acc_x=acc_x,
+        acc_pos=acc_pos,
+        acc_attn_bias=acc_attn_bias,
+        acc_node_type_edge=acc_node_type_edge,
     )

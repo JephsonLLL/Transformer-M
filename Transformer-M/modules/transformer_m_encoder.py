@@ -292,7 +292,7 @@ class TransformerMEncoder(nn.Module):
             if not last_state_only:
                 inner_states.append(x)
 
-        #pdb.set_trace()
+        pdb.set_trace()
         #3
         atom_output = None
         if delta_pos is not None:
@@ -555,8 +555,6 @@ class TransformerMEncoderQM9(nn.Module):
             x, _ = layer(x, self_attn_padding_mask=padding_mask, self_attn_mask=attn_mask, self_attn_bias=attn_bias)
             if not last_state_only:
                 inner_states.append(x)
-
-
 
 
 

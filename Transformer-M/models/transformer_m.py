@@ -1,5 +1,8 @@
 import logging
 
+import copy
+import pdb
+
 import torch
 import torch.nn as nn
 from fairseq import utils
@@ -194,8 +197,8 @@ class TransformerMModel(FairseqEncoderModel):
             encoder = TransformerM(args)
         '''
 
-        #encoder = TransformerMQM9(args)
-        encoder = TransformerM(args)
+        encoder = TransformerMQM9(args)
+        #encoder = TransformerM(args)
 
         return cls(args, encoder)
 
@@ -359,6 +362,41 @@ class TransformerMQM9(FairseqEncoder):
             no_2d=args.no_2d,
             mode_prob=args.mode_prob,
         )
+        '''
+        self.acc_molecule_encoder = copy.deepcopy(self.molecule_encoder)
+        
+        self.acc_molecule_encoder = self.molecule_encoder = TransformerMEncoderQM9(
+            num_atoms=args.num_atoms,
+            num_in_degree=args.num_in_degree,
+            num_out_degree=args.num_out_degree,
+            num_edges=args.num_edges,
+            num_spatial=args.num_spatial,
+            num_edge_dis=args.num_edge_dis,
+            edge_type=args.edge_type,
+            multi_hop_max_dist=args.multi_hop_max_dist,
+            num_encoder_layers=args.encoder_layers,
+            embedding_dim=args.encoder_embed_dim,
+            ffn_embedding_dim=args.encoder_ffn_embed_dim,
+            num_attention_heads=args.encoder_attention_heads,
+            dropout=args.dropout,
+            attention_dropout=args.attention_dropout,
+            activation_dropout=args.act_dropout,
+            max_seq_len=self.max_positions,
+            num_segments=args.num_segment,
+            use_position_embeddings=not args.no_token_positional_embeddings,
+            encoder_normalize_before=args.encoder_normalize_before,
+            apply_init=args.apply_init,
+            activation_fn=args.activation_fn,
+            learned_pos_embedding=args.encoder_learned_pos,
+            sandwich_ln=args.sandwich_ln,
+            droppath_prob=args.droppath_prob,
+            add_3d=args.add_3d,
+            num_3d_bias_kernel=args.num_3d_bias_kernel,
+            no_2d=args.no_2d,
+            mode_prob=args.mode_prob,
+        )
+        '''
+
 
         self.embed_out = None
         self.proj_out = None
@@ -381,17 +419,62 @@ class TransformerMQM9(FairseqEncoder):
             self.proj_out = ClassificationHead(
                     args.encoder_embed_dim, args.encoder_embed_dim, args.num_classes, args.activation_fn
                 )
+            '''
+            self.acc_proj_out = copy.deepcopy(self.proj_out)
+            
+            self.acc_proj_out = ClassificationHead(
+                    args.encoder_embed_dim, args.encoder_embed_dim, args.num_classes, args.activation_fn
+                )
+            '''
+        self.combine = CombineHead()
 
+        #self.acc_molecule_encoder.load_state_dict(self.molecule_encoder.state_dict())
+        #self.acc_proj_out.load_state_dict(self.proj_out.state_dict())
+
+    
 
     def forward(self, batched_data, perturb=None, segment_labels=None, masked_tokens=None, **unused):
+        
+        '''
+        for param in self.acc_molecule_encoder.parameters():
+            param.requires_grad = False
 
+        for param in self.acc_proj_out.parameters():
+            param.requires_grad = False
+
+        '''
         inner_states, atom_output = self.molecule_encoder(
             batched_data,
             segment_labels=segment_labels,
             perturb=perturb,
         )
+        '''
+        test, atom_output = self.molecule_encoder(
+            batched_data,
+            segment_labels=segment_labels,
+            perturb=perturb,
+        )
+        '''
+        self.acc_proj_out = copy.deepcopy(self.proj_out)
+        self.acc_molecule_encoder = copy.deepcopy(self.molecule_encoder)
+        
+        #db.set_trace()
+
+        batched_data['x'] = batched_data['acc_x']
+        batched_data['pos'] = batched_data['acc_pos']
+        batched_data['attn_bias'] = batched_data['acc_attn_bias']
+        batched_data['node_type_edge'] = batched_data['acc_node_type_edge']
+        
+        acc_inner_states, acc_atom_output = self.acc_molecule_encoder(
+            batched_data,
+            segment_labels=segment_labels,
+            perturb=perturb,
+        )
+        
+
 
         x = inner_states[-1].transpose(0, 1)
+        acc_x = acc_inner_states[-1].transpose(0, 1)
 
         if self.load_softmax:
             x = self.layer_norm(self.activation_fn(self.lm_head_transform_weight(x)))
@@ -399,6 +482,14 @@ class TransformerMQM9(FairseqEncoder):
             x = x + self.lm_output_learned_bias
         else:
             x = self.proj_out(x)
+            acc_x = self.acc_proj_out(acc_x)
+
+        x = x[:, 0, :]
+        acc_x = acc_x[:, 0, :]
+
+        x = torch.cat((x,acc_x),dim=1)
+
+        x = self.combine(x)
 
         return x, atom_output, {
             "inner_states": inner_states,
@@ -444,7 +535,21 @@ class TransformerMQM9(FairseqEncoder):
                     print("Copying", k, "(from model initialization)")
         return state_dict
 
-
+class CombineHead(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.dense1 = nn.Linear(2, 8)
+        self.activation_fn = nn.ReLU()
+        self.dense3 = nn.Linear(8,8)
+        self.dense2 = nn.Linear(8, 1)
+    def forward(self, features, **kwargs):
+        x = self.dense1(features)
+        x = self.activation_fn(x)
+        x = self.dense3(x)
+        x = self.activation_fn(x)
+        x = self.dense2(x)
+        return x
+        
 class ClassificationHead(nn.Module):
     """Head for classification tasks."""
 
@@ -456,6 +561,8 @@ class ClassificationHead(nn.Module):
         self.out_proj = nn.Linear(inner_dim, num_classes)
 
     def forward(self, features, **kwargs):
+        #import pdb
+        #pdb.set_trace()
         x = self.dropout(features)
         x = self.dense(x)
         x = self.activation_fn(x)
